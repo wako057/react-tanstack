@@ -74,7 +74,6 @@ export async function createNewEvent(eventData) {
   
   
   export async function deleteEvent({ id }) {
-    console.log('on est dans la fonction de suppression');
     const response = await fetch(`http://localhost:3000/events/${id}`, {
       method: 'DELETE',
     });
