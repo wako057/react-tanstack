@@ -1,18 +1,36 @@
-import { Link, Outlet, useParams } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 
 import Header from '../Header.jsx';
-import { useQuery } from '@tanstack/react-query';
-import { fetchEvent } from '../../utils/http.js';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { queryClient, fetchEvent, deleteEvent } from '../../utils/http.js';
 import ErrorBlock from '../UI/ErrorBlock.jsx';
 import LoadingIndicator from '../UI/LoadingIndicator.jsx';
 
 export default function EventDetails() {
   const params = useParams();
+  const navigate = useNavigate();
 
   const { data, isPending, isError, error } = useQuery({
     queryKey: ['event', { eventId: params.id }],
     queryFn: ({ signal }) => fetchEvent({ signal, id: params.id })
   });
+
+  const { mutate } = useMutation({
+    mutationFn: deleteEvent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      navigate('/events');
+    },
+    onError: (meta) => console.log(meta)
+  });
+
+  function handleDeleteEvent() {
+    const proceed = window.confirm('Are you sure ?');
+
+    if (proceed) {
+      mutate({ id: params.id });
+    }
+  }
 
   return (
     <>
@@ -23,6 +41,7 @@ export default function EventDetails() {
         </Link>
       </Header>
       <article id="event-details">
+
         {isError && (
           <ErrorBlock
             title="Could not fetch event details"
@@ -31,13 +50,19 @@ export default function EventDetails() {
               "No info available"
             }
           />)}
-        {isPending && (<p style={{ textAlign: 'center' }}><LoadingIndicator /></p>)}
+
+        {isPending && (
+          <div style={{ textAlign: 'center' }}>
+            <LoadingIndicator />
+          </div>
+        )}
+
         {!isPending && data && (
           <>
             <header>
               <h1>{data.title}</h1>
               <nav>
-                <button>Delete</button>
+                <button onClick={handleDeleteEvent}>Delete</button>
                 <Link to="edit">Edit</Link>
               </nav>
             </header>
